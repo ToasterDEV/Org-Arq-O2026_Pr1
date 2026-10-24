@@ -36,3 +36,28 @@ addi s0, zero, 3       # Número de discos (último valor en la línea).
 lui   s1, 0x10010       # s1 = 0x10010000 -> torre A (columna +0)
 addi  s2, s1, 4         # s2 = 0x10010004 -> torre B (columna +4)
 addi  s3, s1, 8         # s3 = 0x10010008 -> torre C (columna +8)
+slli  s4, s0, 5         # s4 = N * 32 = bytes de una columna completa (sirve para saber dónde termina cada torre)
+
+# Inicialización: colocar los discos del 1 al total (N) en la torre A. Fila 0 recibe el disco 1 (arriba), fila N-1 el disco N (base).
+
+addi  t0, zero, 1       # t0 = tamaño del disco a colocar (empieza en 1)
+add   t1, s1, zero      # t1 = dirección del nivel actual en torre A
+init_loop:
+blt   s0, t0, init_fin  # si N < disco, ya se colocaron todos -> salir
+sw    t0, 0(t1)         # escribir el disco en el nivel actual
+addi  t0, t0, 1         # siguiente disco (uno más grande)
+addi  t1, t1, 32        # bajar un nivel (siguiente fila)
+jal   zero, init_loop   # repetir (jal con rd=zero = salto simple)
+init_fin:
+
+# Llamada inicial a función recursiva
+
+add   a0, s0, zero      # a0 = n = N
+add   a1, s1, zero      # a1 = origen   = torre A
+add   a2, s2, zero      # a2 = auxiliar = torre B
+add   a3, s3, zero      # a3 = destino  = torre C
+jal   ra, hanoi         # llamar a la función recursiva
+
+# Finalizar el programa
+addi  a7, zero, 10      # código de servicio 10 = terminar
+ecall
