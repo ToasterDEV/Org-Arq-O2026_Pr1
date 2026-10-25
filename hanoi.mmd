@@ -1,0 +1,88 @@
+---
+config:
+  layout: elk
+---
+flowchart TD
+  subgraph MAIN["main"]
+    M1["s0 = N<br/>addi s0, zero, N"]
+  class M1 presetPrimary
+    M2["Apuntadores de torre <br/>s1 = A = 0x10010000 (lui)<br/>s2 = A+4 · s3 = A+8<br/>s4 = N·32 (slli)"]
+  class M2 presetPrimary
+    M3["Inicio del bucle <br/>t0 = 1 (disc) · t1 = s1 (row 0)"]
+  class M3 presetPrimary
+    M4{"N < t0 ?"}
+  class M4 presetPrimary
+    M5["sw t0, 0(t1)<br/>t0 += 1 · t1 += 32"]
+  class M5 presetSuccess
+    M6["a0=N · a1=A · a2=B · a3=C<br/>jal ra, hanoi"]
+  class M6 presetPrimary
+classDef presetSuccess fill:#22c55e,stroke:#000000,color:#000000
+classDef presetPrimary fill:#3b82f6,stroke:#000000,color:#000000
+    M7["a7 = 10 · ecall (exit)"]
+  class M7 presetPrimary
+  end
+
+  subgraph HANOI["hanoi(a0=n, a1=orig, a2=aux, a3=dest)"]
+    H0(["Punto de Entrada"])
+  class H0 presetPrimary
+    H1["Preprocesado<br/>sp -= 20<br/>save ra, n, orig, aux, dest"]
+  class H1 presetPrimary
+    H2{"n == 1 ?"}
+  class H2 presetPrimary
+    H3["Paso 1<br/>n = n-1 · Cambiar aux con dest<br/>jal hanoi(n-1, orig, dest, aux)"]
+  class H3 presetPrimary
+    H4["Restablecer a0..a3 de la pila"]
+  class H4 presetPrimary
+
+    subgraph MOVE["Paso 2: Mover (Mover el disco de hasta arriba en orig hacia dest)"]
+      V1["t1 = orig row 0"]
+  class V1 presetPrimary
+      V2{"mem[t1] != 0 ?"}
+  class V2 presetPrimary
+      V3["t1 += 32 (bajar)"]
+  class V3 presetSuccess
+      V4["t2 = disc<br/>sw zero, 0(t1)"]
+  class V4 presetPrimary
+      V5["t3 = dest row 0<br/>t4 = dest + N·32"]
+  class V5 presetPrimary
+      V6{"t3 == t4 or<br/>mem[t3] != 0 ?"}
+  class V6 presetPrimary
+      V7["t3 += 32 (bajar)"]
+  class V7 presetSuccess
+      V8["t3 -= 32<br/>sw t2, 0(t3)"]
+  class V8 presetPrimary
+    end
+
+    BP(["ver_movimiento<br/>Breakpoint aquí: Mover visible"])
+  class BP presetPrimary
+    H5{"n == 1 ?"}
+  class H5 presetPrimary
+    H6["Paso 3<br/>n = n-1 · Cambiar orig con aux<br/>jal hanoi(n-1, aux, orig, dest)"]
+  class H6 presetPrimary
+    H7["Limpieza<br/>lw ra · sp += 20<br/>jalr zero, ra, 0"]
+  class H7 presetSuccess
+  end
+
+  M1 --> M2 --> M3 --> M4
+  M4 -- no --> M5 --> M4
+  M4 -- sí --> M6
+  M6 -.->|llamar| H0
+  M6 -->|en retorno| M7
+
+  H0 --> H1 --> H2
+  H2 -- no --> H3
+  H3 -.->|llamada recursiva| H0
+  H3 -->|en retorno| H4 --> V1
+  H2 -- sí --> V1
+
+  V1 --> V2
+  V2 -- no --> V3 --> V2
+  V2 -- sí --> V4 --> V5 --> V6
+  V6 -- no --> V7 --> V6
+  V6 -- sí --> V8 --> BP
+
+  BP --> H5
+  H5 -- sí --> H7
+  H5 -- no --> H6
+  H6 -.->|llamada recursiva| H0
+  H6 -->|en retorno| H7
