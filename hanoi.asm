@@ -42,12 +42,15 @@ slli  s4, s0, 5         # s4 = N * 32 = bytes de una columna completa (sirve par
 
 addi  t0, zero, 1       # t0 = tamaño del disco a colocar (empieza en 1)
 add   t1, s1, zero      # t1 = dirección del nivel actual en torre A
+
 init_loop:
+
 blt   s0, t0, init_fin  # si N < disco, ya se colocaron todos -> salir
 sw    t0, 0(t1)         # escribir el disco en el nivel actual
 addi  t0, t0, 1         # siguiente disco (uno más grande)
 addi  t1, t1, 32        # bajar un nivel (siguiente fila)
 jal   zero, init_loop   # repetir (jal con rd=zero = salto simple)
+
 init_fin:
 
 # Llamada inicial a función recursiva
