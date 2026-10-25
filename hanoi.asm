@@ -129,3 +129,23 @@ colocar:
 
    addi  t3, t3, -32       # subir un nivel (primer espacio libre)
    sw    t2, 0(t3)         # colocar el disco en la torre destino
+
+ver_movimiento: # A partir de la siguiente instrucción el movimiento del disco debería ser visible en el Data Segment.
+
+  addi  t0, zero, 1       # t0 = 1
+  beq   a0, t0, fin       # si n == 1 (caso base), terminar esta llamada
+
+# Paso 3: hanoi(n-1, auxiliar, origen, destino)
+
+  addi  a0, a0, -1        # n = n - 1
+  add   t1, a1, zero      # intercambiar origen y auxiliar:
+  add   a1, a2, zero      #   nuevo origen   = auxiliar
+  add   a2, t1, zero      #   nuevo auxiliar = origen
+  jal   ra, hanoi         # llamada recursiva (destino se mantiene)
+
+# Limpieza: restaurar y regresar al principio
+
+fin:
+  lw    ra, 16(sp)        # recuperar dirección de retorno
+  addi  sp, sp, 20        # liberar el marco del stack
+  jalr  zero, ra, 0       # regresar al principio
