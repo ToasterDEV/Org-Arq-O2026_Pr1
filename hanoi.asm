@@ -61,3 +61,71 @@ jal   ra, hanoi         # llamar a la función recursiva
 # Finalizar el programa
 addi  a7, zero, 10      # código de servicio 10 = terminar
 ecall
+
+# hanoi(a0 = n, a1 = origen, a2 = auxiliar, a3 = destino)
+#
+# if n != 1: hanoi(n-1, origen, destino, auxiliar)   # Paso 1
+#   mover disco superior de origen a destino         # Paso 2
+# if n != 1: hanoi(n-1, auxiliar, origen, destino)   # Paso 3
+
+hanoi:                    # Preprocesado: Guardar contexto en la pila/stack
+
+  addi  sp, sp, -20       # reservar 5 words en el stack
+  sw    ra, 16(sp)        # dirección de retorno
+  sw    a0, 12(sp)        # número de discos n
+  sw    a1, 8(sp)         # apuntador torre origen
+  sw    a2, 4(sp)         # apuntador torre auxiliar
+  sw    a3, 0(sp)         # apuntador torre destino
+
+# Caso base: n == 1 -> solo mover
+
+  addi  t0, zero, 1       # t0 = 1
+  beq   a0, t0, mover     # si n == 1, saltar directo a mover el disco
+
+# Paso 1: hanoi(n-1, origen, destino, auxiliar)
+
+  addi  a0, a0, -1        # n = n - 1, así quitamos uno del contador
+  add   t1, a2, zero      # intercambiar auxiliar y destino:
+  add   a2, a3, zero      #   nuevo auxiliar = destino
+  add   a3, t1, zero      #   nuevo destino  = auxiliar
+  jal   ra, hanoi         # llamada recursiva
+
+# Recuperar los argumentos de esta llamada (la recursión los modificó)
+
+  lw    a0, 12(sp)        # n
+  lw    a1, 8(sp)         # origen
+  lw    a2, 4(sp)         # auxiliar
+  lw    a3, 0(sp)         # destino
+
+# Paso 2: Mover disco de origen (a1) a destino (a3)
+
+mover: # Buscar el disco superior de la torre origen: recorrer desde la fila 0 hacia abajo hasta encontrar un valor distinto de 0. (La torre origen nunca debería estar vacía cuando se llega aquí.)
+  add   t1, a1, zero        # t1 == dirección de la fila 0 de origen
+
+buscar_origen:
+
+  lw    t2, 0(t1)           # t2 == contenido del nivel actual
+  bne   t2, zero, quitar    # si hay disco, es el superior y hay que quitarlo
+  addi  t1, t1, 32          # si no, bajar un nivel
+  jal   zero, buscar_origen # repetir
+
+quitar:
+  sw    zero, 0(t1)       # quitar el disco de origen (dejar 0). t2 conserva el tamaño del disco movido.
+
+# Buscar el lugar libre en la torre destino: recorrer desde la fila 0 hacia abajo hasta encontrar un disco o salir de la torre. El disco se coloca en la fila inmediatamente superior.
+
+  add   t3, a3, zero      # t3 = dirección de la fila 0 de destino
+  add   t4, a3, s4        # t4 = dirección justo debajo de la base
+
+buscar_destino:
+
+  beq   t3, t4, colocar   # si se pasó la base, la torre está vacía
+  lw    t5, 0(t3)         # t5 = contenido del nivel actual
+  bne   t5, zero, colocar # si hay un disco, colocar encima de él
+  addi  t3, t3, 32        # si está vacío, bajar un nivel
+  jal   zero, buscar_destino
+
+colocar:
+
+   addi  t3, t3, -32       # subir un nivel (primer espacio libre)
+   sw    t2, 0(t3)         # colocar el disco en la torre destino
