@@ -8,4 +8,10 @@
 > Dicho desplazamiento cuenta con la restricción de que solo se puede mover un disco a la vez, y que en ningún momento puede un disco de mayor diámetro estar sobre un disco de menor diámetro.
 
 ### Diagrama de flujo del programa
-[Ver hanoi.mmd](hanoi.mmd)
+
+[Ver diagrama de la implementación original](hanoi.mmd)
+[Ver diagrama de la implementación final/mejorada con IA](hanoi_ai.mmd)
+
+### Modificación
+
+Esta práctica fue modificada el 2026-11-11 como experimento para ver qué cambios realizaban otros modelos de inteligencia artificial con el fin de mejorar sus resultados
