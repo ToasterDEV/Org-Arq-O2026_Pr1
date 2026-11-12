@@ -3,6 +3,7 @@
 # a1/a2/a3 = apuntador al disco superior de origen/auxiliar/destino
 # (torre vacía: base + 32N). hanoi los devuelve ACTUALIZADOS y en el mismo
 # orden; preserva a0 y sp. Breakpoint: ver_movimiento. N válido: 1..64.
+# Hecho por Claude Opus 5.5 inspirado en implementaciones previas
 ###############################################################################
 .data
 torres: .space 2048
