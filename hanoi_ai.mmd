@@ -1,0 +1,72 @@
+---
+config:
+  layout: elk
+---
+flowchart TD
+  subgraph MAIN["main"]
+    M1["s0 = N = 15<br/>addi s0, zero, 15"]
+  class M1 presetPrimary
+    M2["Base de torres<br/>s1 = A = 0x10010000 (lui)<br/>s4 = N·32 (slli)"]
+  class M2 presetPrimary
+    M3["Inicio del bucle (do-while)<br/>t0 = 1 (disco) · t1 = s1 (fila 0)"]
+  class M3 presetPrimary
+    M5["sw t0, 0(t1)<br/>t0 += 1 · t1 += 32"]
+  class M5 presetSuccess
+    M4{"N ≥ t0 ?<br/>(bge s0, t0)"}
+  class M4 presetPrimary
+    M6["Topes iniciales<br/>a0 = N<br/>a1 = A (fila 0)<br/>a2 = A + 32N + 4 (B vacía)<br/>a3 = A + 32N + 8 (C vacía)<br/>jal ra, hanoi"]
+  class M6 presetPrimary
+    M7["a7 = 10 · ecall (exit)"]
+  class M7 presetPrimary
+  end
+
+  subgraph HANOI["hanoi(a0=n, a1=tope orig, a2=tope aux, a3=tope dest)<br/>Devuelve a1..a3 actualizados en el mismo orden · preserva a0 y sp"]
+    H0(["Punto de Entrada"])
+  class H0 presetPrimary
+    H1["t0 = 1 (disco del caso base)"]
+  class H1 presetPrimary
+    H2{"n == 1 ?"}
+  class H2 presetPrimary
+    R1["Preprocesado<br/>sp -= 4 · sw ra, 0(sp)<br/>(solo se guarda ra)"]
+  class R1 presetPrimary
+    R2["Paso 1<br/>n = n-1 · Intercambiar aux con dest (vía t1)<br/>jal hanoi(n-1, orig, dest, aux)"]
+  class R2 presetPrimary
+    R3["Restaurar orden (orig, aux, dest)<br/>Intercambiar aux con dest (vía t1)"]
+  class R3 presetPrimary
+    R4["Paso 2<br/>t0 = a0 + 1 = n (disco n)<br/>jal ra, mover (ra ya está en la pila)"]
+  class R4 presetPrimary
+
+    subgraph MOVE["mover: Mover el disco t0 del tope de orig (a1) al tope de dest (a3)"]
+      V1["Quitar de origen<br/>sw zero, 0(a1)<br/>a1 += 32 (nuevo tope de origen)"]
+  class V1 presetPrimary
+      V2["Colocar en destino<br/>a3 -= 32 (nuevo tope de destino)<br/>sw t0, 0(a3)"]
+  class V2 presetPrimary
+      BP(["ver_movimiento<br/>Breakpoint aquí: movimiento visible<br/>jalr zero, ra, 0"])
+  class BP presetSuccess
+    end
+
+    R5["Paso 3<br/>Intercambiar orig con aux (vía t1)<br/>jal hanoi(n-1, aux, orig, dest)"]
+  class R5 presetPrimary
+    R6["Restaurar orden (orig, aux, dest)<br/>Intercambiar orig con aux (vía t1)<br/>a0 += 1 (restaurar n)"]
+  class R6 presetPrimary
+    R7["Limpieza<br/>lw ra, 0(sp) · sp += 4<br/>jalr zero, ra, 0"]
+  class R7 presetSuccess
+  end
+
+  M1 --> M2 --> M3 --> M5 --> M4
+  M4 -- sí --> M5
+  M4 -- no --> M6
+  M6 -.->|llamar| H0
+  M6 -->|en retorno| M7
+
+  H0 --> H1 --> H2
+  H2 -- "sí (caso base: cae directo en mover)" --> V1
+  H2 -- no --> R1 --> R2
+  R2 -.->|llamada recursiva| H0
+  R2 -->|en retorno| R3 --> R4
+  R4 -.->|llamar mover| V1
+  R4 -->|en retorno| R5
+  R5 -.->|llamada recursiva| H0
+  R5 -->|en retorno| R6 --> R7
+
+  V1 --> V2 --> BP
